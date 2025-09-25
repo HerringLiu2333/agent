@@ -6,6 +6,7 @@ from typing import Dict, Optional, List, Tuple
 from .prompt_pack import generate_prompt_files
 from .read_file import read_text
 import dotenv
+from .ts_func_extract import find_functions_for_patch
 
 # 正则模式：匹配形如 " * @key value" 的行（允许前导空格和星号）
 _KEY_VALUE_RE = re.compile(r"^\s*\*\s*@([a-zA-Z0-9_.-]+)\s+(.*)$")
@@ -166,12 +167,6 @@ def write_artifacts(meta: Dict[str, Optional[str]], repo_path: Optional[str] = N
     with open(source_abs, 'r', encoding='utf-8', errors='ignore') as f:
         source_content = f.read()
 
-    # 提取结构体名与函数名并打印
-    if patch_diff:
-        structs, functions = _extract_structs_functions_from_patch(patch_diff)
-        print(f"[PATCH] structs: {sorted(structs) if structs else '[]'}")
-        print(f"[PATCH] functions: {sorted(functions) if functions else '[]'}")
-
     out_dir = os.path.join(base_output_dir, name)
     os.makedirs(out_dir, exist_ok=True)
 
@@ -184,6 +179,22 @@ def write_artifacts(meta: Dict[str, Optional[str]], repo_path: Optional[str] = N
 
     _write('patch.txt', patch_diff)
     _write('file.txt', source_content)
+
+    # 解析补丁命中的函数/宏定义块，并写入 function.txt
+    try:
+        blocks = find_functions_for_patch(source_content, patch_diff)
+        if blocks:
+            _write('function.txt', "\n\n/* ----- separator ----- */\n\n".join(blocks))
+        else:
+            _write('function.txt', "")
+    except Exception as _e:
+        _write('function.txt', f"解析函数块失败: {_e}")
+
+    # 打印补丁所在的完整函数块（基于 tree-sitter）
+    try:
+        find_functions_for_patch(source_content, patch_diff)
+    except Exception:
+        pass
 
     return (os.path.abspath(out_dir), written)
 

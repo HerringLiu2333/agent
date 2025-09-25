@@ -8,7 +8,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 # Cached LLM instance and its configuration signature
 _LLM_INSTANCE: Optional[ChatOpenAI] = None
 _LLM_CONFIG: Optional[Dict[str, Any]] = None
-DEFAULT_MODEL = "gpt-4o-mini"
+DEFAULT_MODEL = "gpt-5-mini"
 
 
 def _load_env() -> None:
