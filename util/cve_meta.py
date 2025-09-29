@@ -117,7 +117,8 @@ def git_checkout(commit_hash: str, repo_path: Optional[str] = None) -> Dict[str,
         raise RuntimeError(f"路径不是一个 git 仓库: {repo_path}")
 
     try:
-        subprocess.run(["git", "checkout", commit_hash], cwd=repo_path, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # 使用 -f 强制切换，避免因未提交更改阻塞 checkout
+        subprocess.run(["git", "checkout", "-f", commit_hash], cwd=repo_path, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         # 获取当前提交哈希
         commit_full = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo_path).decode().strip()
         # 获取当前分支（可能为空）

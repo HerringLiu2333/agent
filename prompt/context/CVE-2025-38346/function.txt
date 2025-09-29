@@ -1,0 +1,69 @@
+void ftrace_release_mod(struct module *mod)
+{
+	struct ftrace_mod_map *mod_map;
+	struct ftrace_mod_map *n;
+	struct dyn_ftrace *rec;
+	struct ftrace_page **last_pg;
+	struct ftrace_page *tmp_page = NULL;
+	struct ftrace_page *pg;
+
+	mutex_lock(&ftrace_lock);
+
+	if (ftrace_disabled)
+		goto out_unlock;
+
+	list_for_each_entry_safe(mod_map, n, &ftrace_mod_maps, list) {
+		if (mod_map->mod == mod) {
+			list_del_rcu(&mod_map->list);
+			call_rcu(&mod_map->rcu, ftrace_free_mod_map);
+			break;
+		}
+	}
+
+	/*
+	 * Each module has its own ftrace_pages, remove
+	 * them from the list.
+	 */
+	last_pg = &ftrace_pages_start;
+	for (pg = ftrace_pages_start; pg; pg = *last_pg) {
+		rec = &pg->records[0];
+		if (within_module(rec->ip, mod)) {
+			/*
+			 * As core pages are first, the first
+			 * page should never be a module page.
+			 */
+			if (WARN_ON(pg == ftrace_pages_start))
+				goto out_unlock;
+
+			/* Check if we are deleting the last page */
+			if (pg == ftrace_pages)
+				ftrace_pages = next_to_ftrace_page(last_pg);
+
+			ftrace_update_tot_cnt -= pg->index;
+			*last_pg = pg->next;
+
+			pg->next = tmp_page;
+			tmp_page = pg;
+		} else
+			last_pg = &pg->next;
+	}
+ out_unlock:
+	mutex_unlock(&ftrace_lock);
+
+	/* Need to synchronize with ftrace_location_range() */
+	if (tmp_page)
+		synchronize_rcu();
+	for (pg = tmp_page; pg; pg = tmp_page) {
+
+		/* Needs to be called outside of ftrace_lock */
+		clear_mod_from_hashes(pg);
+
+		if (pg->records) {
+			free_pages((unsigned long)pg->records, pg->order);
+			ftrace_number_of_pages -= 1 << pg->order;
+		}
+		tmp_page = pg->next;
+		kfree(pg);
+		ftrace_number_of_groups--;
+	}
+}

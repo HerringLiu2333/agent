@@ -14,5 +14,7 @@ venv/
 .pytest_cache/
 .ipynb_checkpoints/
 .DS_Store
+res/llm.log
+prompt/create_prompt.log
 # VSCode settings (optional uncomment if you don't want to share)
 # .vscode/
