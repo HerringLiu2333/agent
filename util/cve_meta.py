@@ -172,30 +172,30 @@ def write_artifacts(meta: Dict[str, Optional[str]], repo_path: Optional[str] = N
     os.makedirs(out_dir, exist_ok=True)
 
     written: List[str] = []
-    def _write(filename: str, text: str):
+    def _write_if_absent(filename: str, text_provider):
+        """若文件不存在则写入，由 text_provider 提供内容（惰性计算）。"""
         path = os.path.join(out_dir, filename)
+        if os.path.exists(path):
+            return False
+        text = text_provider() if callable(text_provider) else text_provider
         with open(path, 'w', encoding='utf-8') as wf:
             wf.write(text)
         written.append(filename)
+        return True
 
-    _write('patch.txt', patch_diff)
-    _write('file.txt', source_content)
+    # 写入 patch.txt 与 file.txt（若不存在）
+    _write_if_absent('patch.txt', patch_diff)
+    _write_if_absent('file.txt', source_content)
 
-    # 解析补丁命中的函数/宏定义块，并写入 function.txt
-    try:
-        blocks = find_functions_for_patch(source_content, patch_diff)
-        if blocks:
-            _write('function.txt', "\n\n/* ----- separator ----- */\n\n".join(blocks))
-        else:
-            _write('function.txt', "")
-    except Exception as _e:
-        _write('function.txt', f"解析函数块失败: {_e}")
+    # 仅当 function.txt 不存在时，解析补丁所在的完整函数/宏块并写入
+    def _compute_functions_text():
+        try:
+            blocks = find_functions_for_patch(source_content, patch_diff)
+            return "\n\n/* ----- separator ----- */\n\n".join(blocks) if blocks else ""
+        except Exception as _e:
+            return f"解析函数块失败: {_e}"
 
-    # 打印补丁所在的完整函数块（基于 tree-sitter）
-    try:
-        find_functions_for_patch(source_content, patch_diff)
-    except Exception:
-        pass
+    _write_if_absent('function.txt', _compute_functions_text)
 
     return (os.path.abspath(out_dir), written)
 

@@ -56,6 +56,19 @@ def generate_prompt_files(meta: Dict[str, Optional[str]], base_context_dir: str 
     file_path = os.path.join(cve_dir, 'file.txt')
     function_path = os.path.join(cve_dir, 'function.txt')
 
+    # 目标输出路径（若已存在则跳过处理）
+    out_file_prompt = os.path.join(cve_dir, 'prompt_file.txt')
+    out_patch_prompt = os.path.join(cve_dir, 'prompt_patch.txt')
+    out_function_prompt = os.path.join(cve_dir, 'prompt_function.txt')
+
+    # 若三个输出文件均已存在，则直接返回映射并跳过后续渲染
+    if os.path.isfile(out_file_prompt) and os.path.isfile(out_patch_prompt) and os.path.isfile(out_function_prompt):
+        return {
+            'prompt_file.txt': os.path.abspath(out_file_prompt),
+            'prompt_patch.txt': os.path.abspath(out_patch_prompt),
+            'prompt_function.txt': os.path.abspath(out_function_prompt),
+        }
+
     if not os.path.isfile(patch_path) or not os.path.isfile(file_path) or not os.path.isfile(function_path):
         raise RuntimeError('缺少 patch.txt / file.txt / function.txt，请先生成 artifacts')
 
@@ -80,20 +93,21 @@ def generate_prompt_files(meta: Dict[str, Optional[str]], base_context_dir: str 
 
     written: Dict[str, str] = {}
     os.makedirs(cve_dir, exist_ok=True)
-    out_file_prompt = os.path.join(cve_dir, 'prompt_file.txt')
-    out_patch_prompt = os.path.join(cve_dir, 'prompt_patch.txt')
-    out_function_prompt = os.path.join(cve_dir, 'prompt_function.txt')
 
-    with open(out_file_prompt, 'w', encoding='utf-8') as wf:
-        wf.write(rendered_file)
+    # 仅写入缺失的目标文件，已存在则跳过
+    if not os.path.isfile(out_file_prompt):
+        with open(out_file_prompt, 'w', encoding='utf-8') as wf:
+            wf.write(rendered_file)
     written['prompt_file.txt'] = os.path.abspath(out_file_prompt)
 
-    with open(out_patch_prompt, 'w', encoding='utf-8') as wf:
-        wf.write(rendered_patch)
+    if not os.path.isfile(out_patch_prompt):
+        with open(out_patch_prompt, 'w', encoding='utf-8') as wf:
+            wf.write(rendered_patch)
     written['prompt_patch.txt'] = os.path.abspath(out_patch_prompt)
 
-    with open(out_function_prompt, 'w', encoding='utf-8') as wf:
-        wf.write(rendered_function)
+    if not os.path.isfile(out_function_prompt):
+        with open(out_function_prompt, 'w', encoding='utf-8') as wf:
+            wf.write(rendered_function)
     written['prompt_function.txt'] = os.path.abspath(out_function_prompt)
 
     return written
