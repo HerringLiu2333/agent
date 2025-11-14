@@ -4,11 +4,10 @@ Task: Based only on the supplied materials, produce a human-readable detection p
 Rules:
 1. Only use evidence contained in the sections labeled [PATCH_DESCRIPTION], [PATCH_DIFF], [FUNCTION_CONTENT], and [ROOTCAUSE_ANALYSIS]. Do not invent facts.
 2. The plan must be a step-by-step detection strategy in natural language (numbered steps). No code, no query snippets, no regex, no domain-specific language.
-3. Each step must state: objective, signals to look for (AST/semantic patterns expressed conceptually), why it maps to the root cause, and how to reduce false positives.
-4. Include a short test/validation strategy (what sample cases to run and expected outcomes).
-5. List limitations and assumptions (what is Not determinable from inputs).
-6. Keep the plan concise: overall ≤ 12 numbered steps and each step ≤ 2 concise sentences. Use bullets where helpful.
-7. If information required to design an accurate checker is missing, state it explicitly under "Limitations & Assumptions".
+3. Each step must state: objective, signals to look for (AST/semantic patterns expressed conceptually).
+4. List limitations and assumptions (what is Not determinable from inputs). If information required to design an accurate checker is missing, state it explicitly under "Limitations & Assumptions".
+5. Keep the plan concise: overall ≤ 12 numbered steps and each step ≤ 2 concise sentences. Use bullets where helpful.
+6. Please try to use the simplest way and fewer steps to achieve your goal. But for every step, your response should be as concrete as possible so that I can easily follow your guidance and write a correct checker!
 
 [META]
 CVE_NAME: {{CVE_NAME}}
@@ -23,11 +22,7 @@ CVE_NAME: {{CVE_NAME}}
 Produce a detection plan for a CodeQL-based static checker that would detect similar pre-patch flaws.
 Requirements for the plan:
 - High-level detection goal (1–2 lines).
-- A numbered list of detection steps (objective, conceptual AST/semantic signals, FP mitigation).
-- Types of program elements to target (functions, call sites, allocation sites, condition checks, lock boundaries, function return-value uses, etc.).
-- Dataflow/taint patterns to consider (if applicable), described conceptually.
-- Minimal test cases to validate the checker (positive/negative examples).
-- Estimated effort/priority (low/medium/high) and likely false-positive sources.
+- A numbered list of detection steps (objective, conceptual AST/semantic signals).
 - A short "Limitations & Assumptions" block.
 
 OUTPUT FORMAT (produce exactly this structure; no extra text):
@@ -35,32 +30,10 @@ OUTPUT FORMAT (produce exactly this structure; no extra text):
 {one-line summary}
 
 2. Detection Steps
-1) Step 1: {objective — conceptual signals — FP mitigation}
-2) Step 2: {objective — conceptual signals — FP mitigation}
+1) Step 1: {objective — conceptual signals}
+2) Step 2: {objective — conceptual signals}
 ...
 (narrow to ≤12 steps)
 
-3. Target Elements
-- {list of element types to inspect}
-
-4. Dataflow / Taint Considerations
-- {conceptual taint/flow rules to track}
-
-5. Validation & Test Cases
-- Positive: {brief}
-- Negative: {brief}
-- Test harness notes: {brief}
-
-6. Estimated Effort & Priority
-{low/medium/high}
-
-7. Likely False-Positive Sources & Mitigations
-- {list}
-
-8. Limitations & Assumptions
+3. Limitations & Assumptions
 - {explicit missing info or assumptions}
-
-CONSTRAINTS:
-- Do not emit any CodeQL, SQL, pseudocode, or query fragments.
-- Keep answers evidence-based and reference which provided field supported each major choice (e.g., “based on [PATCH_DIFF] hunk that adds X”).
-- Output must be machine-parseable: keep the exact numbered section headings as above.

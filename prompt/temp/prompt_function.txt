@@ -4,7 +4,9 @@ Task: Produce a structured root-cause analysis of the vulnerability that existed
 Rules:
 1. Follow the [OUTPUT FORMAT] exactly and populate every field. Use evidence from [PATCH_DIFF], [PATCH_DESCRIPTION], and [FUNCTION_CONTENT].
 2. Root cause = the flawed or missing pre-patch logic that the patch corrects (e.g., missing validation, incorrect locking/ordering, race window, unsafe access, integer/length misuse, lifetime/refcount bug, pointer misuse).
-3. Be evidence-driven: reference function names, local context, and hunk scope in the diff; you may quote 1–3 lines of original (pre-patch) code only when necessary to support claims; avoid long code dumps.
+3. Be evidence-driven: reference function names, local context, and hunk scope in the diff; when you do, follow this format:
+[The element you are referencing] (Line number of the element)
+Example: xxx (5)
 4. Patch analysis must map each fix to the identified root cause (e.g., added checks, lock adjustments, lifetime/RCU changes, bounds fixes, condition rewrites).
 5. Concurrency/locking: when relevant, explicitly state missing/incorrect locks, RCU usage, atomicity, or ordering and what the patch changed (lock/unlock points, ordering changes).
 6. Memory/safety: when relevant, specify trigger conditions and impact (UAF, OOB, double free, uninitialized use, integer overflow/underflow, length miscalculation, TOCTOU, etc.).

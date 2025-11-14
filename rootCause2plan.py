@@ -94,7 +94,7 @@ def makePrompt(project_root: Optional[str] = None) -> None:
         for tpl_name, prompt_fn, res_fn in templates:
             tpl_path = os.path.join(temp_dir, tpl_name)
             tpl_text = _read_text(tpl_path)
-            out_path = os.path.join(ctx_name_dir, tpl_name)
+            out_path = os.path.join(ctx_name_dir, tpl_name + "1")
 
             if tpl_text is None:
                 # 如果模板不存在，写入一份包含提取内容的默认文件
@@ -227,7 +227,14 @@ def send_prompts2plan_from_dir(project_root: str, prompt_dir_rel: str = "prompt/
                     continue
 
                 fname = ln.strip()
-                prompt_path = os.path.join(project_root, 'prompt', 'context', cur_dir, fname)
+                # Prefer files with a trailing '1' (e.g., rootCause2plan_file.txt1) if present.
+                ctx_dir = os.path.join(project_root, 'prompt', 'context', cur_dir)
+                candidate_with_1 = fname + '1'
+                if os.path.isfile(os.path.join(ctx_dir, candidate_with_1)):
+                    prompt_fname = candidate_with_1
+                else:
+                    prompt_fname = fname
+                prompt_path = os.path.join(ctx_dir, prompt_fname)
                 if not os.path.isfile(prompt_path):
                     llm_log(project_root, f"提示文件不存在，跳过: {prompt_path}")
                     print(project_root, f"提示文件不存在，跳过: {prompt_path}")
@@ -236,14 +243,16 @@ def send_prompts2plan_from_dir(project_root: str, prompt_dir_rel: str = "prompt/
 
                 try:
                     used_model = model_kwargs.get("model", DEFAULT_MODEL)
-                    llm_log(project_root, f"发送 {cur_dir}/{fname} 到模型 ({used_model})...")
-                    print(project_root, f"发送 {cur_dir}/{fname} 到模型 ({used_model})...")
+                    llm_log(project_root, f"发送 {cur_dir}/{prompt_fname} 到模型 ({used_model})...")
+                    print(project_root, f"发送 {cur_dir}/{prompt_fname} 到模型 ({used_model})...")
                     reply = send_message_from_file(prompt_path, system_prompt=system_prompt, **model_kwargs)
-                    llm_log(project_root, f"回复 ({cur_dir}/{fname}):\n{reply}")
+                    llm_log(project_root, f"回复 ({cur_dir}/{prompt_fname}):\n{reply}")
 
                     out_dir_res = os.path.join(project_root, 'res', cur_dir)
                     os.makedirs(out_dir_res, exist_ok=True)
-                    save_path = os.path.join(out_dir_res, fname)
+                    # 保存时继续使用原始行指定的文件名 plus '1' to avoid overwriting existing res files.
+                    # If we sent a '*1' file, still append '1' to match existing behavior.
+                    save_path = os.path.join(out_dir_res, fname + '1')
                     try:
                         with open(save_path, 'w', encoding='utf-8') as wf:
                             wf.write(reply)
